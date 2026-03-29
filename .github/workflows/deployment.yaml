@@ -1,0 +1,53 @@
+# 1. In VS Code, right-click your project root and create a new folder: .github
+# 2. Inside .github, create another folder: workflows
+# 3. Inside workflows, create this file: deploy.yml
+
+name: Deploy Three-Tier App to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the code from the repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # 2. Log in to EC2 and execute deployment script
+      - name: SSH and Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          # The script below assumes your code is in the folder: ~/AWS-three-tier-web-app-main
+          script: |
+            echo "Starting Deployment..."
+            
+            # Navigate to project folder
+            cd ~/AWS-three-tier-web-app-main || git clone https://github.com/${{ github.repository }}.git ~/AWS-three-tier-web-app-main
+            cd ~/AWS-three-tier-web-app-main
+            
+            # Pull latest changes
+            git pull origin main
+            
+            # --- FRONTEND DEPLOYMENT (Nginx) ---
+            # If your frontend needs building (e.g., React), uncomment the lines below:
+            # cd frontend && npm install && npm run build
+            # sudo cp -r build/* /var/www/html/
+            
+            # --- BACKEND DEPLOYMENT (Node/Python) ---
+            # Example for Node.js using PM2:
+            # cd ../backend && npm install
+            # pm2 restart all || pm2 start index.js --name "my-app"
+            
+            # Restart Nginx to ensure latest config is active
+            sudo systemctl restart nginx
+            
+            echo "Deployment Successful!"
