@@ -50,4 +50,4 @@ jobs:
             # Restart Nginx to ensure latest config is active
             sudo systemctl restart nginx
             
-            echo "Deployment Successful!"
+            echo "Deployment Successful"
